@@ -176,7 +176,7 @@ const App = () => {
 
 
   const disconnect = peripheral => {
-    BleManager.removeBond(peripheral.id)
+    BleManager.disconnect(peripheral.id)
       .then(() => {
 
         setPeripherals(map => {
