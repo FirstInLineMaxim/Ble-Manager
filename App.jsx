@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react-native/no-inline-styles */
 
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Text,
   Alert,
@@ -16,16 +16,18 @@ import {
   NativeEventEmitter,
   PermissionsAndroid,
 } from 'react-native';
-import {styles} from './src/styles/styles';
-import {DeviceList} from './src/DeviceList';
+import { styles } from './src/styles/styles';
 import BleManager from 'react-native-ble-manager';
-import {Colors} from 'react-native/Libraries/NewAppScreen';
+import { Colors } from 'react-native/Libraries/NewAppScreen';
+import DeviceItem from './src/DeviceItem';
 
 const BleManagerModule = NativeModules.BleManager;
 const BleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
 const App = () => {
-  const peripherals = new Map();
+  const [peripherals, setPeripherals] = useState(
+    new Map(),
+  );
   const [isScanning, setIsScanning] = useState(false);
   const [connectedDevices, setConnectedDevices] = useState([]);
   const [discoveredDevices, setDiscoveredDevices] = useState([]);
@@ -58,7 +60,21 @@ const App = () => {
       }
     });
   };
-
+  const handleDisconnectedPeripheral = (
+    event,
+  ) => {
+    console.debug(
+      `[handleDisconnectedPeripheral][${event.peripheral}] disconnected.`,
+    );
+    setPeripherals(map => {
+      let p = map.get(event.peripheral);
+      if (p) {
+        p.connected = false;
+        return new Map(map.set(event.peripheral, p));
+      }
+      return map;
+    });
+  };
   useEffect(() => {
     handleLocationPermission();
 
@@ -66,7 +82,7 @@ const App = () => {
       console.log('Bluetooth is turned on!');
     });
 
-    BleManager.start({showAlert: false}).then(() => {
+    BleManager.start({ showAlert: false }).then(() => {
       console.log('BleManager initialized');
       handleGetConnectedDevices();
     });
@@ -74,8 +90,14 @@ const App = () => {
     let stopDiscoverListener = BleManagerEmitter.addListener(
       'BleManagerDiscoverPeripheral',
       peripheral => {
-        peripherals.set(peripheral.id, peripheral);
-        setDiscoveredDevices(Array.from(peripherals.values()));
+        if (peripheral.name === "nRF5x") {
+          console.log("[Discoverd]")
+          setPeripherals(map => {
+            peripheral.connecting = false;
+            peripheral.connected = false;
+            return new Map(map.set(peripheral.id, peripheral));
+          });
+        }
       },
     );
 
@@ -85,7 +107,10 @@ const App = () => {
         console.log('BleManagerConnectPeripheral:', peripheral);
       },
     );
-
+    let disconnectedLister = BleManagerEmitter.addListener(
+      'BleManagerDisconnectPeripheral',
+      handleDisconnectedPeripheral
+    );
     let stopScanListener = BleManagerEmitter.addListener(
       'BleManagerStopScan',
       () => {
@@ -103,6 +128,8 @@ const App = () => {
 
   const scan = () => {
     if (!isScanning) {
+      // reset found peripherals before scan
+      setPeripherals(new Map());
       BleManager.scan([], 5, true)
         .then(() => {
           console.log('Scanning...');
@@ -113,27 +140,54 @@ const App = () => {
         });
     }
   };
-
-  const connect = peripheral => {
-    BleManager.createBond(peripheral.id)
-      .then(() => {
-        peripheral.connected = true;
-        peripherals.set(peripheral.id, peripheral);
-        let devices = Array.from(peripherals.values());
-        setConnectedDevices(Array.from(devices));
-        setDiscoveredDevices(Array.from(devices));
-        console.log('BLE device paired successfully');
-      })
-      .catch(() => {
-        throw Error('failed to bond');
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  const connect = async (peripheral) => {
+    try {
+      setPeripherals(map => {
+        let p = map.get(peripheral.id);
+        if (p) {
+          p.connecting = true;
+          return new Map(map.set(p.id, p));
+        }
+        return map;
       });
+      // Connect to the peripheral
+      await BleManager.connect(peripheral.id);
+      console.log('Connected to', peripheral.id);
+      setPeripherals(map => {
+        let p = map.get(peripheral.id);
+        console.log(p)
+        if (p) {
+          p.connecting = false;
+          p.connected = true;
+          return new Map(map.set(p.id, p));
+        }
+        return map;
+      });
+
+    } catch (error) {
+      // Handle errors here
+      console.error('Failed to connect or create bond:', error);
+      throw new Error('Failed to connect or create bond');
+    }
   };
+
 
   const disconnect = peripheral => {
     BleManager.removeBond(peripheral.id)
       .then(() => {
-        peripheral.connected = false;
-        peripherals.set(peripheral.id, peripheral);
+
+        setPeripherals(map => {
+          let p = map.get(peripheral.id);
+          if (p) {
+            p.connecting = false;
+            p.connected = false;
+            return new Map(map.set(p.id, p));
+          }
+          return map;
+        });
         let devices = Array.from(peripherals.values());
         setConnectedDevices(Array.from(devices));
         setDiscoveredDevices(Array.from(devices));
@@ -148,23 +202,28 @@ const App = () => {
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
-
+  const stopScan = () => {
+    BleManager.stopScan().then(() => {
+      // Success code
+      console.log("Scan stopped");
+    });
+  }
   return (
     <SafeAreaView style={[backgroundStyle, styles.container]}>
       <StatusBar
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         backgroundColor={backgroundStyle.backgroundColor}
       />
-      <View style={{pdadingHorizontal: 20}}>
+      <View style={{ pdadingHorizontal: 20 }}>
         <Text
           style={[
             styles.title,
-            {color: isDarkMode ? Colors.white : Colors.black},
+            { color: isDarkMode ? Colors.white : Colors.black },
           ]}>
           React Native BLE Manager Tutorial
         </Text>
         <TouchableOpacity
-          onPress={scan}
+          onPress={() => isScanning ? stopScan() : scan()}
           activeOpacity={0.5}
           style={styles.scanButton}>
           <Text style={styles.scanButtonText}>
@@ -175,15 +234,15 @@ const App = () => {
         <Text
           style={[
             styles.subtitle,
-            {color: isDarkMode ? Colors.white : Colors.black},
+            { color: isDarkMode ? Colors.white : Colors.black },
           ]}>
           Discovered Devices:
         </Text>
-        {discoveredDevices.length > 0 ? (
+        {Array.from(peripherals.values()).length > 0 ? (
           <FlatList
-            data={discoveredDevices}
-            renderItem={({item}) => (
-              <DeviceList
+            data={Array.from(peripherals.values())}
+            renderItem={({ item }) => (
+              <DeviceItem
                 peripheral={item}
                 connect={connect}
                 disconnect={disconnect}
@@ -195,18 +254,18 @@ const App = () => {
           <Text style={styles.noDevicesText}>No Bluetooth devices found</Text>
         )}
 
-        <Text
+        {/*         <Text
           style={[
             styles.subtitle,
-            {color: isDarkMode ? Colors.white : Colors.black},
+            { color: isDarkMode ? Colors.white : Colors.black },
           ]}>
           Connected Devices:
         </Text>
         {connectedDevices.length > 0 ? (
           <FlatList
             data={connectedDevices}
-            renderItem={({item}) => (
-              <DeviceList
+            renderItem={({ item }) => (
+              <DeviceItem
                 peripheral={item}
                 connect={connect}
                 disconnect={disconnect}
@@ -216,7 +275,7 @@ const App = () => {
           />
         ) : (
           <Text style={styles.noDevicesText}>No connected devices</Text>
-        )}
+        )} */}
       </View>
     </SafeAreaView>
   );
