@@ -1,4 +1,4 @@
-import {StyleSheet, Dimensions} from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 
 const windowHeight = Dimensions.get('window').height;
 export const styles = StyleSheet.create({
@@ -11,10 +11,10 @@ export const styles = StyleSheet.create({
     padding: 16,
   },
   title: {
-    fontSize: 30,
+    fontSize: 20,
     textAlign: 'center',
     marginBottom: 20,
-    marginTop: 40,
+    marginTop: 20,
   },
   subtitle: {
     fontSize: 24,

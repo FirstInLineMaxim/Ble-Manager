@@ -3,6 +3,8 @@ import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import BleManager from 'react-native-ble-manager';
 import { DeviceInfo, parseCharacteristicResults } from './utils';
 
+
+
 const DeviceItem = ({ peripheral, connect, disconnect }) => {
     const [deviceInfo, setDeviceInfo] = useState<DeviceInfo>({
         model: 'N/A',
@@ -18,26 +20,6 @@ const DeviceItem = ({ peripheral, connect, disconnect }) => {
 
         try {
             const peripheralInfo = await BleManager.retrieveServices(peripheralId);
-            /*             const promises = peripheralInfo.characteristics?.map(async (char) => {
-                            console.log(decodeCharacteristicValue(char?.value?.bytes ?? []))
-                            if (char.service === "7f280001-8204-f393-e0a9-e50e24dcca9e") return new Promise((res, rej) => res(null))
-            
-                            try {
-                                const value = await BleManager.read(
-                                    peripheralId,
-                                    char.service,
-                                    char.characteristic
-                                );
-                                return { char, value };
-                            } catch (error) {
-                                console.error(`[readCharacteristics] Error reading characteristic ${char.characteristic}`, error);
-                                return { char, error };
-                            }
-                        });
-            
-                        // Wait for all promises to resolve or reject
-                        const results = await Promise.allSettled(promises || []);
-             */
             // Parse results into a DeviceInfo object
             const info = parseCharacteristicResults(peripheralInfo);
             setDeviceInfo(info)
@@ -89,7 +71,7 @@ const DeviceItem = ({ peripheral, connect, disconnect }) => {
 const styles = StyleSheet.create({
     deviceItem: {
         padding: 10,
-        marginBottom: 15,
+        marginBottom: 10,
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 5,

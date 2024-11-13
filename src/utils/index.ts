@@ -1,14 +1,12 @@
 import { PeripheralInfo } from "react-native-ble-manager";
 
-type CharacteristicData = {
-    char: {
-        service: string;
-        characteristic: string;
-    };
-    value?: number[];
-    error?: any;
-};
-
+/**
+ * C3 BLE SERVICES IOS
+ * 
+ * 180a = Device Information Service 
+ * 7f280001-8204-f393-e0a9-e50e24dcca9e = unknow
+ * a3c87500-8ed3-4bdf-8a39-a01bebede295 = unknow
+ */
 export type DeviceInfo = {
     model: string;
     serialNumber: string;
