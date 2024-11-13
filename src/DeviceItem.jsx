@@ -15,6 +15,7 @@ const DeviceItem = ({ peripheral, connect, disconnect }) => {
                     // Store the characteristics data alongside their identifiers for later use
                     const promises = peripheralInfo.characteristics?.map(async (char) => {
                         try {
+
                             const value = await BleManager.read(
                                 peripheral.id,
                                 char.service,
@@ -39,24 +40,37 @@ const DeviceItem = ({ peripheral, connect, disconnect }) => {
 
                             console.log("[readCharacteristics]", "peripheralId", peripheral.id, "service", char.service, "char", char.characteristic, "\n\tvalue", decodedValue);
 
-                            // Update info based on the characteristic
-                            if (char.characteristic === '2a29') {
-                                info.manufacturer = decodedValue; // Manufacturer
-                            }
-                            if (char.characteristic === '2a25') {
-                                info.mac = decodedValue; // Mac Address
-                            }
-                            if (char.characteristic === '2a24') {
-                                info.model = decodedValue; // Model name
-                            }
-                            if (char.characteristic === '2a27') {
-                                info.hardwareRevision = decodedValue; // Hardware revision
-                            }
-                            if (char.characteristic === '2a26') {
-                                info.firmwareRevision = decodedValue; // Firmware revision
-                            }
-                            if (char.characteristic === '2a28') {
-                                info.softwareRevision = decodedValue; // Software revision
+                            switch (char.characteristic) {
+                                /**
+                                 * ALL CODES CAN BE FOUND HERE 
+                                 * https://www.bluetooth.com/wp-content/uploads/Files/Specification/HTML/Assigned_Numbers/out/en/Assigned_Numbers.pdf
+                                 */
+                                //Model Number String
+                                case "2a24":
+                                    info.model = decodedValue;
+                                    break;
+                                //Serial Number String (MAC Address)
+                                case "2a25":
+                                    info.serialNumber = decodedValue;
+                                    break;
+                                //Firmware Revision String 
+                                case "2a26":
+                                    info.firmwareRevision = decodedValue;
+                                    break;
+                                //Hardware Revision String
+                                case "2a27":
+                                    info.hardwareRevision = decodedValue;
+                                //Software Revision String
+                                case "2a28":
+                                    info.softwareRevision = decodedValue;
+                                    break;
+                                //Manufacturer Name String
+                                case "2a29":
+                                    info.manufacturer = decodedValue;
+                                    break;
+                                default:
+                                    console.log(`[Read Characteristic]Characteristic: ${char.characteristic} | NO CASE IMPLEMENTED \n\t Value: ${decodedValue}`)
+                                    break;
                             }
                         } else if (status === "rejected") {
                             console.error("[readCharacteristics] Error reading characteristic", reason);
@@ -82,7 +96,7 @@ const DeviceItem = ({ peripheral, connect, disconnect }) => {
                 <>
                     <Text>Manufacturer: {deviceInfo.manufacturer || 'N/A'}</Text>
                     <Text>Model: {deviceInfo.model || 'N/A'}</Text>
-                    <Text>MAC: {deviceInfo.mac || 'N/A'}</Text>
+                    <Text>Serial Number: {deviceInfo.serialNumber || 'N/A'}</Text>
                     <Text>Hardware: {deviceInfo.hardwareRevision || 'N/A'}</Text>
                     <Text>Firmware: {deviceInfo.firmwareRevision || 'N/A'}</Text>
                     <Text>Software: {deviceInfo.softwareRevision || 'N/A'}</Text>
