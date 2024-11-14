@@ -1,6 +1,6 @@
 import { StyleSheet, Dimensions } from 'react-native';
 
-const windowHeight = Dimensions.get('window').height;
+const windowHeight = Dimensions.get('window').height + 10;
 export const styles = StyleSheet.create({
   container: {
     flex: 1,

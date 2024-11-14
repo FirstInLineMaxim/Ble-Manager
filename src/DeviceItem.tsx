@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
-import BleManager from 'react-native-ble-manager';
+import BleManager, { Peripheral } from 'react-native-ble-manager';
 import { DeviceInfo, parseCharacteristicResults } from './utils';
 
 
-
-const DeviceItem = ({ peripheral, connect, disconnect }) => {
+const DeviceItem = ({ peripheral, connect, disconnect }: { peripheral: Peripheral, connect: (peripheral: Peripheral) => void, disconnect: (peripheral: Peripheral) => void }) => {
     const [deviceInfo, setDeviceInfo] = useState<DeviceInfo>({
         model: 'N/A',
         serialNumber: 'N/A',
@@ -42,12 +41,12 @@ const DeviceItem = ({ peripheral, connect, disconnect }) => {
 
             {deviceInfo ? (
                 <>
-                    <Text>Manufacturer: {deviceInfo.manufacturer || 'N/A'}</Text>
-                    <Text>Model: {deviceInfo.model || 'N/A'}</Text>
-                    <Text>Serial Number: {deviceInfo.serialNumber || 'N/A'}</Text>
-                    <Text>Hardware: {deviceInfo.hardwareRevision || 'N/A'}</Text>
-                    <Text>Firmware: {deviceInfo.firmwareRevision || 'N/A'}</Text>
-                    <Text>Software: {deviceInfo.softwareRevision || 'N/A'}</Text>
+                    <Text>Manufacturer: {deviceInfo.manufacturer}</Text>
+                    <Text>Model: {deviceInfo.model}</Text>
+                    <Text>Serial Number: {deviceInfo.serialNumber}</Text>
+                    <Text>Hardware: {deviceInfo.hardwareRevision}</Text>
+                    <Text>Firmware: {deviceInfo.firmwareRevision}</Text>
+                    <Text>Software: {deviceInfo.softwareRevision}</Text>
                 </>
             ) : (
                 <Text>Loading device information...</Text>

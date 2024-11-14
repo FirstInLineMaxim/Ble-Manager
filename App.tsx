@@ -17,7 +17,7 @@ import {
   PermissionsAndroid,
 } from 'react-native';
 import { styles } from './src/styles/styles';
-import BleManager from 'react-native-ble-manager';
+import BleManager, { BleDisconnectPeripheralEvent, Peripheral } from 'react-native-ble-manager';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import DeviceItem from './src/DeviceItem';
 
@@ -25,12 +25,10 @@ const BleManagerModule = NativeModules.BleManager;
 const BleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
 const App = () => {
-  const [peripherals, setPeripherals] = useState(
+  const [peripherals, setPeripherals] = useState<Map<string, Peripheral>>(
     new Map(),
   );
   const [isScanning, setIsScanning] = useState(false);
-  const [connectedDevices, setConnectedDevices] = useState([]);
-  const [discoveredDevices, setDiscoveredDevices] = useState([]);
 
   const handleLocationPermission = async () => {
     if (Platform.OS === 'android' && Platform.Version >= 23) {
@@ -40,28 +38,28 @@ const App = () => {
         );
 
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          console.log('Location permission granted');
+          console.log('[handleLocationPermission] Location permission granted');
         } else {
-          console.log('Location permission denied');
+          console.log('[handleLocationPermission] Location permission denied');
         }
       } catch (error) {
-        console.log('Error requesting location permission:', error);
+        console.log('[handleLocationPermission] Error requesting location permission:', error);
       }
     }
   };
 
   const handleGetConnectedDevices = () => {
-    BleManager.getBondedPeripherals([]).then(results => {
+    BleManager.getBondedPeripherals().then(results => {
       for (let i = 0; i < results.length; i++) {
         let peripheral = results[i];
         peripheral.connected = true;
         peripherals.set(peripheral.id, peripheral);
-        setConnectedDevices(Array.from(peripherals.values()));
+
       }
     });
   };
   const handleDisconnectedPeripheral = (
-    event,
+    event: BleDisconnectPeripheralEvent,
   ) => {
     console.debug(
       `[handleDisconnectedPeripheral][${event.peripheral}] disconnected.`,
@@ -91,7 +89,6 @@ const App = () => {
       'BleManagerDiscoverPeripheral',
       peripheral => {
         if (peripheral.name === "nRF5x") {
-          console.log("[Discoverd]")
           setPeripherals(map => {
             peripheral.connecting = false;
             peripheral.connected = false;
@@ -140,10 +137,10 @@ const App = () => {
         });
     }
   };
-  function sleep(ms) {
+  function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
-  const connect = async (peripheral) => {
+  const connect = async (peripheral: Peripheral) => {
     try {
       setPeripherals(map => {
         let p = map.get(peripheral.id);
@@ -175,7 +172,7 @@ const App = () => {
   };
 
 
-  const disconnect = peripheral => {
+  const disconnect = (peripheral: Peripheral) => {
     BleManager.disconnect(peripheral.id)
       .then(() => {
 
@@ -188,9 +185,7 @@ const App = () => {
           }
           return map;
         });
-        let devices = Array.from(peripherals.values());
-        setConnectedDevices(Array.from(devices));
-        setDiscoveredDevices(Array.from(devices));
+
         Alert.alert(`Disconnected from ${peripheral.name}`);
       })
       .catch(() => {
@@ -214,7 +209,7 @@ const App = () => {
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
         backgroundColor={backgroundStyle.backgroundColor}
       />
-      <View style={{ pdadingHorizontal: 20 }}>
+      <View style={{ paddingHorizontal: 20 }}>
         <Text
           style={[
             styles.title,
@@ -253,29 +248,6 @@ const App = () => {
         ) : (
           <Text style={styles.noDevicesText}>No Bluetooth devices found</Text>
         )}
-
-        {/*         <Text
-          style={[
-            styles.subtitle,
-            { color: isDarkMode ? Colors.white : Colors.black },
-          ]}>
-          Connected Devices:
-        </Text>
-        {connectedDevices.length > 0 ? (
-          <FlatList
-            data={connectedDevices}
-            renderItem={({ item }) => (
-              <DeviceItem
-                peripheral={item}
-                connect={connect}
-                disconnect={disconnect}
-              />
-            )}
-            keyExtractor={item => item.id}
-          />
-        ) : (
-          <Text style={styles.noDevicesText}>No connected devices</Text>
-        )} */}
       </View>
     </SafeAreaView>
   );
