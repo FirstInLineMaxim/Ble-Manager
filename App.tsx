@@ -3,9 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Text,
-  Alert,
-  View,
+  Text, View,
   FlatList,
   Platform,
   StatusBar,
@@ -14,7 +12,7 @@ import {
   useColorScheme,
   TouchableOpacity,
   NativeEventEmitter,
-  PermissionsAndroid,
+  PermissionsAndroid
 } from 'react-native';
 import { styles } from './src/styles/styles';
 import BleManager, { BleDisconnectPeripheralEvent, Peripheral } from 'react-native-ble-manager';
@@ -25,7 +23,7 @@ const BleManagerModule = NativeModules.BleManager;
 const BleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
 const App = () => {
-  const [peripherals, setPeripherals] = useState<Map<string, Peripheral>>(
+  const [peripherals, setPeripherals] = useState<Map<Peripheral['id'], Peripheral>>(
     new Map(),
   );
   const [isScanning, setIsScanning] = useState(false);
@@ -186,7 +184,7 @@ const App = () => {
           return map;
         });
 
-        Alert.alert(`Disconnected from ${peripheral.name}`);
+        // Alert.alert(`Disconnected from ${peripheral.name}`);
       })
       .catch(() => {
         throw Error('fail to remove the bond');
